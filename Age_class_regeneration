@@ -1,0 +1,26 @@
+//Importar asset no script. Asse aparecerá como variável table
+
+//Idades coleção 5
+//var idades = ee.Image('projects/mapbiomas-workspace/public/collection5/mapbiomas_collection50_secondary_vegetation_age_v1')
+//Idades coleção 6: divide por 100 e arredonda para retirar o código da classe natural
+var idades = ee.Image('projects/mapbiomas-workspace/public/collection6/mapbiomas_collection60_secondary_vegetation_age_v1').divide(100).round()
+
+//Extrair raster somente na área do polígono
+var idade_AOI = idades.clip(table)
+
+Map.centerObject(table, 13);
+Map.addLayer(idade_AOI)//, {min: -1, max: 1, palette: ['FF0000', '00FF00']});
+Map.addLayer(table, {}, 'Poligono')
+
+//Extrair média e desvio padrão
+var reducers = ee.Reducer.mean().combine({
+  reducer2: ee.Reducer.stdDev(),
+  sharedInputs: true
+})
+var stats_idade = idade_AOI.reduceRegion({
+  reducer: reducers,
+  geometry: table.geometry(),
+  bestEffort: true,
+})
+
+print(stats_idade)
