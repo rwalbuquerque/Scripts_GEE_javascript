@@ -1,0 +1,108 @@
+//Checar se tem imagem Sentinel
+var filtro = imageCollection2.filterBounds(poligono).filterDate('2019-06-01',
+'2019-06-30').filterMetadata('CLOUD_COVER','less_than', 0.8)
+//Map.addLayer(filtro)
+
+//Landsat, que é imageCollection3 pra 2012
+var landsat = ee.Image(imageCollection.filterDate('2019-01-01',
+'2019-01-30').filterBounds(poligono).sort('CLOUD_COVER').first())
+var TrueColor = {
+  bands:['B4','B3','B2'],
+  min: 4000,
+  max: 12000,
+}
+Map.addLayer(landsat, TrueColor, 'LandSat')//visualizar rgb
+//Sentinel
+var sentinel = ee.Image(imageCollection2.filterDate('2018-07-01',
+'2019-01-30').filterBounds(poligono).sort('CLOUD_COVER').first())
+var TrueColor2 = {
+  bands:['B4','B3','B2'],
+  min: 440,
+  max: 1256,
+}
+Map.addLayer(sentinel, TrueColor2, 'Sentinel')//visualizar rgb
+
+//var sentinel = ee.Image('COPERNICUS/S2/20161014T131242_20161014T131238_T23KNR')//código da imagem verificado na aba inspector
+//Map.addLayer(sentinel,{bands:'B3,B2,B1',min: 0,max: 0.2})//visualizar rgb
+
+//Calcular NDVI
+var ndviLandsat = landsat.normalizedDifference(['B5','B4'])
+//Map.addLayer(ndviLandsat, {min: -1, max: 1, palette: ['FF0000', '00FF00']}, 'NDVI')
+//Caso importe os arquivos no GEE:
+//var ndvi = L8_NIR.subtract(L8_RED).divide(L8_NIR.add(L8_RED)).rename('NDVI')
+//Map.addLayer(ndvi, {min: -1, max: 1, palette: ['FF0000', '00FF00']})
+var ndviSentinel = sentinel.normalizedDifference(['B8','B4'])
+//Map.addLayer(ndviSentinel, {min: -1, max: 1, palette: ['FF0000', '00FF00']}, 'NDVI')
+
+//Calcular EVI
+var eviLandsat = landsat.expression(
+    '2.5 * ((NIR - RED) / (NIR + 6 * RED - 7.5 * BLUE + 1))', {
+      'NIR': landsat.select('B5'),
+      'RED': landsat.select('B4'),
+      'BLUE': landsat.select('B2')
+})
+
+// Calcular SAVI Landsat
+var saviLandsat = landsat.expression(
+    '(((NIR - RED) / (NIR + RED + 0.5)) * (1 + 0.5))', {
+      'NIR': landsat.select('B5'),
+      'RED': landsat.select('B4'),
+})
+
+// Calcular SAVI Sentinel
+var saviSentinel = sentinel.expression(
+    '(((NIR - RED) / (NIR + RED + 0.5)) * (1 + 0.5))', {
+      'NIR': sentinel.select('B8'),
+      'RED': sentinel.select('B4'),
+})
+
+//Map.addLayer(saviSentinel, {min: -0.1, max: 0.5}, 'SAVI')
+
+//Extrair raster somente na área do polígono
+var ndvi_landsat_roi = ndviLandsat.clip(poligono)
+var evi_landsat_roi = eviLandsat.clip(poligono)
+var savi_landsat_roi = saviLandsat.clip(poligono)
+var ndvi_sentinel_roi = ndviSentinel.clip(poligono)
+var savi_sentinel_roi = saviSentinel.clip(poligono)
+//Map.addLayer(ndvi_landsat_roi, {}, 'NDVVI_Poligono')
+//Map.addLayer(evi_landsat_roi, {}, 'EVI_Poligono')
+
+Map.centerObject(poligono, 13);
+//Map.addLayer(savi_sentinel_roi, {min: -1, max: 1, palette: ['FF0000', '00FF00']});
+Map.addLayer(poligono, {}, 'Poligono')
+
+//Extrair média e desvio padrão
+var reducers = ee.Reducer.mean().combine({
+  reducer2: ee.Reducer.stdDev(),
+  sharedInputs: true
+})
+var stats_ndvi_landsat = ndvi_landsat_roi.reduceRegion({
+  reducer: reducers,
+  geometry: poligono.geometry(),
+  bestEffort: true,
+})
+var stats_evi_landsat = evi_landsat_roi.reduceRegion({
+  reducer: reducers,
+  geometry: poligono.geometry(),
+  bestEffort: true,
+})
+var stats_savi_landsat = savi_landsat_roi.reduceRegion({
+  reducer: reducers,
+  geometry: poligono.geometry(),
+  bestEffort: true,
+})
+var stats_ndvi_sentinel = ndvi_sentinel_roi.reduceRegion({
+  reducer: reducers,
+  geometry: poligono.geometry(),
+  bestEffort: true,
+})
+var stats_savi_sentinel = savi_sentinel_roi.reduceRegion({
+  reducer: reducers,
+  geometry: poligono.geometry(),
+  bestEffort: true,
+})
+print(stats_ndvi_landsat)
+//print(stats_evi_landsat)
+//print(stats_savi_landsat)
+print(stats_ndvi_sentinel)
+//print(stats_savi_sentinel)
