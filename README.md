@@ -1,6 +1,6 @@
 # Scripts_GEE_javascript
 
-Here I show some Google Earth Engine (GEE) codes (javascript) that I used in some projects.
+Here I show some Google Earth Engine (GEE) codes (javascript) that I have used in some projects.
 
 Age_class_regeneration shows statistics of the age of secondary forests estimates by the MapBiomas (https://mapbiomas.org/en/deforestation-method) project.
 
