@@ -1,4 +1,4 @@
-# Scripts_GEE_javascript
+# Scripts_Google_Earth_Engine
 
 Here I show some Google Earth Engine (GEE) codes (javascript) that I have used in some projects.
 
